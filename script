@@ -1,0 +1,221 @@
+<div id="text-generation-tool">
+    
+    <input type="text" id="topic" placeholder="Your Topic...">
+    <button id="generate-button">Generate</button>
+    <div id="result-container" style="display: none;">
+        <div class="result-wrapper">
+            <div class="result-content">
+                <textarea id="result" readonly></textarea>
+            </div>
+            <div class="copy-button-container">
+                <button id="copy-button">Copy</button>
+            </div>
+        </div>
+    </div>
+    <div id="loading" class="loader" style="display: none;"></div>
+</div>
+
+<style>
+    /* Basic styles for the text generation tool */
+    #text-generation-tool {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        font-family: Arial, sans-serif;
+    }
+
+    #topic {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+
+    #generate-button {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        background-color: #3498db;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #generate-button:hover {
+        background-color: #2980b9;
+    }
+
+    #result-container {
+        display: none;
+        margin-bottom: 20px;
+    }
+
+    .result-wrapper {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .result-content {
+        display: flex;
+    }
+
+    #result {
+        flex: 1;
+        height: 400px;
+        padding: 15px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+    }
+
+    .copy-button-container {
+        margin-top: 10px;
+        text-align: right;
+    }
+
+    #copy-button {
+        padding: 8px 12px;
+        font-size: 14px;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        background-color: #3498db;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #copy-button:hover {
+        background-color: #2980b9;
+    }
+
+    /* CSS for the loader */
+    .loader {
+        display: block;
+        margin: 50px auto;
+        border: 16px solid #f3f3f3; /* Light grey */
+        border-top: 16px solid #3498db; /* Blue */
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    document.getElementById("generate-button").addEventListener("click", function(e){
+        e.preventDefault();
+        
+        
+        var generateButton = document.getElementById("generate-button");
+        
+        if (generateButton.disabled) {
+            return; // Prevent multiple clicks while content is being generated
+        }
+        
+        generateButton.disabled = true;
+        
+        
+        
+        var topic = document.getElementById('topic').value;
+        const prompt =     "As an adept blog writer, your task is to compose an engaging, 
+                            informative blog post designed to appeal to a younger demographic, 
+                            specifically, readers as young as 14 years old. You should utilize the 
+                            provided detailed outline and comprehensive section notes to structure 
+                            your post. Please make sure your blog post complies with the following 
+                            guidelines:
+                            
+                            
+                            1. The language you use should be straightforward and simple, to 
+                            ensure your young readers can grasp your content quickly and easily. 
+                            Avoid complex or uncommon vocabulary that might discourage or confuse 
+                            them. Nevertheless, while your language should be simple, it should also
+                             be compelling and engaging, keeping your readers hooked from beginning 
+                            to end.
+                            
+                            
+                            2. Ensure your points are communicated concisely. While it is 
+                            essential to provide enough details to support your argument, avoid 
+                            overwhelming your readers with unnecessary padding or fluff.
+                            
+                            
+                            3. Strive to make your writing relatable. An element of personal 
+                            touch and humor, added judiciously at the right moments, can help veer 
+                            away from a mechanical or impersonal tone. By adopting a friendly and 
+                            warm tone, you are likely to enjoy enhanced reader engagement and make 
+                            the blog post more enjoyable to consume.
+                            
+                            
+                            4. Propose appropriate visual aids like Gifs, PNG images, or diagrams
+                             that could complement the text at various sections of your blog post. 
+                            Briefly describe how each visual element enhances the text and 
+                            contributes to the blog post’s overall narrative or understanding. 
+                            Well-thought-out graphics can make the post more attractive visually and
+                             assist the readers in better visualizing your ideas.
+                            
+                            
+                            Based on the aforementioned guidelines and using the supplied 
+                            detailed outline: [outline], please create a compelling blog post that 
+                            manages to both educate and entertain our young readership."+topic;
+                           
+        var loading = document.getElementById('loading');
+        var result = document.getElementById('result');
+        var resultC = document.getElementById('result-container');
+
+        loading.style.display = 'block';
+        result.style.display = 'none'; // hide result textarea
+        resultC.style.display = 'none';
+        
+
+        var formData = new FormData();
+        formData.append('action', 'full_blog_generator');
+        formData.append('prompt', prompt);
+
+        fetch('/wp-admin/admin-ajax.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = 'none';
+            if(data.success) {
+                result.value = data.data.choices[0].message.content; 
+                result.style.display = 'block'; // show result textarea
+                resultC.style.display = 'block';
+                generateButton.disabled = false;
+            } else {
+                result.value = 'An error occurred: ' + data.data;
+                result.style.display = 'block'; // show result textarea
+                resultC.style.display = 'block';
+                generateButton.disabled = false;
+            }
+        })
+        .catch(error => {
+            loading.style.display = 'none';
+            result.value = 'An error occurred: ' + error.message;
+            result.style.display = 'block'; // show result textarea
+            resultC.style.display = 'block';
+            generateButton.disabled = false;
+            
+        });
+    });
+    
+    var copyButton = document.getElementById('copy-button');
+    copyButton.addEventListener('click', function() {
+        var result = document.getElementById('result');
+        result.select();
+        document.execCommand('copy');
+        alert('Copied to clipboard!');
+    });
+</script>
